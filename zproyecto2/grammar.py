@@ -7,20 +7,23 @@ EPS = 'ε'
 # Start symbol
 START_SYMBOL = 'program'
 
-# Gramática inicial (subconjunto)
-# Cada producción es una lista de símbolos (terminales o no terminales)
-# Terminales deben corresponder a token.type emitidos por el lexer:
-#   KEYWORD (con lexema), ID, INT, FLOAT, STRING, OP, CMP, ASSIGN, COLON, COMMA, DOT,
-#   LPAR, RPAR, LBRACK, RBRACK, LBRACE, RBRACE, NEWLINE, INDENT, DEDENT, EOF
-# Para conveniencia en las reglas, usamos literales como 'def', 'if', 'else', etc. como tokens terminales
-# que luego se mapearán por valor de lexema (el parser consultará la token.type + token.lexeme).
+# Gramática inicial (subconjunto) corregida y factorizada
+# Cobertura: funciones (def), condicionales (if/elif/else), ciclos (while, for),
+# declaraciones simples (asignación), expresiones aritméticas básicas, bloques por indentación,
+# llamadas simples y literales (INT, FLOAT, STRING), listas y paréntesis.
+#
+# Notas de diseño relevantes aplicadas:
+# - Factorización de producciones que compartían prefijo ID (term + call -> ID term_prime)
+# - Reescritura de la estructura if/elif/else para evitar conflictos SELECT usando elif_star
+# - Las keywords se representan como terminales 'KEYWORD_xxx' (p. ej. KEYWORD_def)
+# - EPS se usa para epsilon
 grammar = {
     # Programa: lista de sentencias seguida de EOF
     'program': [
         ['stmt_list', 'EOF']
     ],
 
-    # Lista de sentencias: cero o más sentencias (cada sentencia termina en NEWLINE o es suite)
+    # Lista de sentencias: cero o más sentencias
     'stmt_list': [
         ['stmt', 'stmt_list'],
         [EPS]
@@ -32,26 +35,26 @@ grammar = {
         ['compound_stmt']
     ],
 
-    # Sentencia simple: asignaciones, return, pass, break/continue, llamada como expresión
+    # Sentencia simple: small_stmt NEWLINE
     'simple_stmt': [
         ['small_stmt', 'NEWLINE']
     ],
-
     'small_stmt': [
-        ['assign_stmt'],
-        ['return_stmt'],
-        ['expr_stmt'],
-        ['pass_stmt'],
-        ['break_stmt'],
-        ['continue_stmt']
+        ['ID', 'small_stmt_tail'],      # identificador -> decide entre asignacion o expresion que comienza con ID
+        ['literal', 'expr_tail'],       # expresion que inicia con literal seguida de posibles operadores
+        ['LPAR', 'expr', 'RPAR', 'expr_tail'],  # (expr) seguido de posibles operadores
+        ['KEYWORD_pass'],
+        ['KEYWORD_break'],
+        ['KEYWORD_continue'],
+        ['KEYWORD_return', 'expr_opt']  # return también se mantiene como small_stmt completo
     ],
-
-    'assign_stmt': [
-        ['target', 'ASSIGN', 'expr']
+        'small_stmt_tail': [
+        ['ASSIGN', 'expr'],                     # asignacion: ID = expr
+        ['term_prime', 'expr_tail']             # expr que empezó con ID: ID term_prime expr_tail
     ],
 
     'return_stmt': [
-        ['KEYWORD_return', 'expr_opt']  # KEYWORD_return para distinguir la keyword 'return'
+        ['KEYWORD_return', 'expr_opt']
     ],
 
     'expr_opt': [
@@ -76,7 +79,7 @@ grammar = {
         ['ID']
     ],
 
-    # Expresiones (exp -> term ((OP) term)* ) manejo simple de operadores binarios
+    # Expresiones: expr -> term expr_tail
     'expr': [
         ['term', 'expr_tail']
     ],
@@ -86,16 +89,21 @@ grammar = {
         [EPS]
     ],
 
-    # term puede ser literal, ID, list literal, paréntesis o call
+    # term factorizado para evitar conflicto entre ID y call
     'term': [
         ['literal'],
-        ['ID'],
-        ['call'],
+        ['ID', 'term_prime'],
         ['list_literal'],
         ['LPAR', 'expr', 'RPAR']
     ],
 
+    'term_prime': [
+        ['LPAR', 'arg_list_opt', 'RPAR'],
+        [EPS]
+    ],
+
     'call': [
+        # Mantener para compatibilidad, pero no se usa directamente (la opción está en term_prime)
         ['ID', 'LPAR', 'arg_list_opt', 'RPAR']
     ],
 
@@ -148,17 +156,14 @@ grammar = {
         ['func_def']
     ],
 
+    # If statement reescrito para evitar conflictos LL(1)
     'if_stmt': [
-        ['KEYWORD_if', 'expr', 'COLON', 'suite', 'if_stmt_tail']
+        ['KEYWORD_if', 'expr', 'COLON', 'suite', 'elif_star', 'else_opt']
     ],
 
-    'if_stmt_tail': [
-        ['elif_list', 'else_opt'],
-        [EPS]
-    ],
-
-    'elif_list': [
-        ['elif_item', 'elif_list'],
+    # cero o más elif_item
+    'elif_star': [
+        ['elif_item', 'elif_star'],
         [EPS]
     ],
 
@@ -179,7 +184,7 @@ grammar = {
         ['KEYWORD_for', 'ID', 'KEYWORD_in', 'expr', 'COLON', 'suite']
     ],
 
-    # Definición de función (sin decoradores, argumentos simples)
+    # Definición de función
     'func_def': [
         ['KEYWORD_def', 'ID', 'LPAR', 'param_list_opt', 'RPAR', 'COLON', 'suite']
     ],
@@ -200,29 +205,26 @@ grammar = {
 
     'param': [
         ['ID'],
-        ['ID', 'COLON', 'type_annotation']  # soporte simple de anotación
+        ['ID', 'COLON', 'type_annotation']
     ],
 
     # type_annotation simplificado
     'type_annotation': [
         ['ID'],
-        ['LBRACK', 'ID', 'RBRACK']  # ej: [int]
+        ['LBRACK', 'ID', 'RBRACK']
     ],
 
     # suite: simple_stmt o NEWLINE INDENT stmt_list DEDENT
     'suite': [
         ['simple_stmt'],
         ['NEWLINE', 'INDENT', 'stmt_list', 'DEDENT']
-    ]
+    ],
+
+
 }
 
 # --- Terminal mapping helpers -------------------------------------------------
-# Algunas producciones usan 'def', 'if', etc. como terminales conceptuales.
-# Para facilitar coincidencia en parser, definimos tokens terminales especiales
-# que representen estas keywords con prefijo KEYWORD_ y también proveemos una
-# lista de terminales nominales (usados por algoritmos FIRST/FOLLOW).
-
-# Conjunto de terminales aceptadas por la gramática (nombres)
+# Lista de terminales nominales (usados por FIRST/FOLLOW y la tabla)
 TERMINALS = {
     'KEYWORD_def', 'KEYWORD_if', 'KEYWORD_else', 'KEYWORD_elif', 'KEYWORD_while',
     'KEYWORD_for', 'KEYWORD_return', 'KEYWORD_pass', 'KEYWORD_break', 'KEYWORD_continue',
@@ -316,13 +318,10 @@ def left_factor(grammar_dict):
                 key = p[0] if len(p) > 0 else EPS
                 groups.setdefault(key, []).append(p)
             # Si algún grupo tiene más de 1 producción y key no EPS -> factorizar
-            any_factor = False
             new_prods_for_A = []
             for key, group in groups.items():
                 if key != EPS and len(group) > 1:
-                    # crear A_fact
                     A_fact = A + "_fact"
-                    any_factor = True
                     changed = True
                     # A -> key A_fact
                     new_prods_for_A.append([key, A_fact])
@@ -335,7 +334,6 @@ def left_factor(grammar_dict):
                             rest_prods.append([EPS])
                     newG[A_fact] = rest_prods
                 else:
-                    # conservar estas producciones tal cual
                     for prod in group:
                         new_prods_for_A.append(prod)
             newG[A] = new_prods_for_A
@@ -354,9 +352,6 @@ def normalize_grammar_for_ll1(base_grammar):
     return g2
 
 # --- Mapa de palabras clave a terminales concretos --------------------------
-# Mapeo para que el parser pueda comparar token.type + token.lexeme con terminales gramaticales
-# por ejemplo: ('KEYWORD', 'def') -> 'KEYWORD_def' en la gramática
-# Se define como función en lugar de dict para flexibilidad.
 def token_to_grammar_terminal(token_type, token_lexeme):
     """
     Convierte (token_type, token_lexeme) a nombre de terminal usado en grammar,

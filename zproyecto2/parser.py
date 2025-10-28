@@ -77,85 +77,83 @@ def gather_expected_for_nonterminal(nonterminal, table):
     readable = [readable_of_terminal(t) for t in expected_terms]
     return readable if readable else [readable_of_terminal('EOF')]
 
-def parse(tokens, table, grammar, start_symbol):
+def parse(tokens, table, grammar, start_symbol, debug=False):
     """
-    Parsea la lista de tokens (secuencia de Token) usando la tabla predictiva.
+    Parsea la lista de tokens usando la tabla predictiva.
     Retorna (True, mensaje) si éxito o (False, mensaje_de_error_primer).
+    Parámetro debug imprime trazas de pila y cursor si se pasa True.
     """
-    # Utilizamos una pila (deque) con EOF y el símbolo inicial
+    from collections import deque
+
     stack = deque()
     stack.append('EOF')
     stack.append(start_symbol)
 
-    # Cursor sobre tokens (lista o iterador). Aseguramos que el último token es EOF.
     cursor = 0
     n = len(tokens)
     if n == 0:
-        return False, "<0, 0> Error sintactico: se encontro: \"\"; se esperaba: \"EOF\"."
-    # Asegurar EOF al final
+        return False, '<0, 0> Error sintactico: se encontro: ""; se esperaba: "EOF".'
+
+    # Asegurar que hay un EOF terminal al final
     if tokens[-1].type != 'EOF':
-        # Esto debería haberse generado por el lexer; si no, añadimos uno artificial
         tokens = tokens + [Token('EOF', '<EOF>', tokens[-1].line, tokens[-1].col+1)]
         n += 1
 
-    while len(stack) > 0:
+    while stack:
         top = stack.pop()
         cur = tokens[cursor]
         cur_term = token_to_terminal(cur)
 
-        # Si top es un terminal (aparecerá en la gramática como símbolo terminal)
-        # Detectamos terminales comparando con la lista de terminales de grammar (TERMINALS)
+        if debug:
+            print(f"[DEBUG] stack_top={top}  cur=({cursor}){cur.type}:{cur.lexeme}  cur_term={cur_term}")
+
         if top == EPS:
-            # epsilon: no consumir token
             continue
 
-        # Consideramos que los no terminales son las claves de grammar
+        # Si top es terminal (no está en grammar keys)
         if top not in grammar:
-            # top es terminal -> compararlo con terminal actual
-            # Para KEYWORD_x tokenización: cur_term ya será KEYWORD_<lexema>
+            # si coincide con el terminal actual -> consumir
             if top == cur_term:
-                # Coincide en tipo; además, para keywords podríamos querer comprobar lexema,
-                # pero token_to_terminal ya distingió KEYWORD_def vs KEYWORD_if.
+                # si es EOF: consumo y aceptación inmediata
                 cursor += 1
-                # avanzar si consumimos EOF, seguir normalmente
+                if top == 'EOF':
+                    return True, "El analisis sintactico ha finalizado exitosamente."
+                continue
             else:
-                # Token no esperado; formatear mensaje de error: listar lo esperado (top)
-                # top puede ser KEYWORD_def o ASSIGN, etc.
+                # token inesperado: preparar lista esperada simple
                 expected = [readable_of_terminal(top)]
                 msg = format_token_error(cur, expected)
                 return False, msg
         else:
-            # top es no terminal: buscar producción en tabla con el terminal actual
+            # top es no terminal
             key = (top, cur_term)
             prod = table.get(key)
             if prod is None:
-                # No hay entrada en la tabla -> error sintáctico: devolver tokens esperados para top
-                expected = gather_expected_for_nonterminal(top, table)
-                msg = format_token_error(cur, expected)
+                # construir lista de esperados para este no terminal
+                expected = Tmod.expected_tokens_for_nonterminal(top, table)
+                expected_readable = [readable_of_terminal(t) for t in expected] or [readable_of_terminal('EOF')]
+                msg = format_token_error(cur, expected_readable)
                 return False, msg
-            # Aplicar la producción: push símbolos en orden inverso (omitir EPS)
-            # prod es lista de símbolos
+            # aplicar producción: push símbolos inversamente
             for sym in reversed(prod):
                 if sym != EPS:
                     stack.append(sym)
-            # Nota: no consumimos token aquí; la siguiente iteración comparará el nuevo top
-        # Protección: evitar consumición de más tokens de los existentes
-        if cursor >= n:
-            # fin prematuro
-            last = tokens[-1]
-            msg = format_token_error(last, [readable_of_terminal('EOF')])
-            return False, msg
 
-    # Pila vacía: verificar que hemos consumido todo y que el token actual es EOF
+        # seguridad: si nos quedamos sin tokens antes de consumir todo
+        if cursor >= n:
+            last = tokens[-1]
+            return False, format_token_error(last, [readable_of_terminal('EOF')])
+
+    # Si terminamos el bucle sin haber retornado, aceptar si el token actual es EOF o si cursor ya pasó EOF
     if cursor < n and tokens[cursor].type == 'EOF':
         return True, "El analisis sintactico ha finalizado exitosamente."
-    # Si quedan tokens no consumidos, reportar el primero restante como error
-    if cursor < n:
-        cur = tokens[cursor]
-        msg = format_token_error(cur, [readable_of_terminal('EOF')])
-        return False, msg
-    # Caso por defecto
-    return True, "El analisis sintactico ha finalizado exitosamente."
+    if cursor >= n:
+        return True, "El analisis sintactico ha finalizado exitosamente."
+
+    # Si quedó algún token no consumido, reportarlo como error (esperábamos EOF)
+    cur = tokens[cursor]
+    return False, format_token_error(cur, [readable_of_terminal('EOF')])
+
 
 # Módulo ejecutable para pruebas rápidas integradas
 if __name__ == "__main__":

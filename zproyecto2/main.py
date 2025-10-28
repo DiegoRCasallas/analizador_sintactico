@@ -11,12 +11,7 @@ OUTPUT_FILENAME = "reporte_sintactico.txt"
 def main():
     # Leer todo el programa de la entrada estándar
     # dentro de main() en main.py, en lugar de: source = sys.stdin.read()
-    if len(sys.argv) >= 2:
-        input_path = sys.argv[1]
-        with open(input_path, "r", encoding="utf-8") as f:
-            source = f.read()
-    else:
-        source = sys.stdin.read()
+    source = sys.stdin.read()
 
     if source is None:
         print("No input provided.", file=sys.stderr)

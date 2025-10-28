@@ -48,6 +48,7 @@ def tokenize(source):
 
     Raises LexerError on illegal characters or mismatched indentation.
     """
+    source = source.replace('\r\n', '\n').replace('\r', '\n')
     tokens = []
     indent_stack = [0]  # stack of indentation levels (counts of spaces)
     lines = source.splitlines(True)  # keep line endings

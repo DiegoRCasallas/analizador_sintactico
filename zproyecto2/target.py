@@ -1,5 +1,3 @@
-def foo(x):
-    if x > 0:
-        return x + 1
-    else:
-        return 0
+def main():
+        arr = [1, 2, 3]
+    foo(arr)
