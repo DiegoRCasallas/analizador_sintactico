@@ -1,1 +1,52 @@
-<0, 0>Error sintactico: falla de indentacion
+El analisis sintactico ha finalizado exitosamente.
+
+Secuencia de producciones aplicadas:
+1. program → stmt_list EOF
+2. stmt_list → stmt stmt_list
+3. stmt → compound_stmt
+4. compound_stmt → func_def
+5. func_def → KEYWORD_def ID LPAR param_list_opt RPAR COLON suite
+6. param_list_opt → ε
+7. suite → NEWLINE INDENT stmt_list DEDENT
+8. stmt_list → stmt stmt_list
+9. stmt → simple_stmt
+10. simple_stmt → small_stmt NEWLINE
+11. small_stmt → ID small_stmt_tail
+12. small_stmt_tail → ASSIGN expr
+13. expr → term expr_tail
+14. term → list_literal
+15. list_literal → LBRACK list_elements_opt RBRACK
+16. list_elements_opt → list_elements
+17. list_elements → expr list_elements_tail
+18. expr → term expr_tail
+19. term → literal
+20. literal → INT
+21. expr_tail → ε
+22. list_elements_tail → COMMA expr list_elements_tail
+23. expr → term expr_tail
+24. term → literal
+25. literal → INT
+26. expr_tail → ε
+27. list_elements_tail → COMMA expr list_elements_tail
+28. expr → term expr_tail
+29. term → literal
+30. literal → INT
+31. expr_tail → ε
+32. list_elements_tail → ε
+33. expr_tail → ε
+34. stmt_list → stmt stmt_list
+35. stmt → simple_stmt
+36. simple_stmt → small_stmt NEWLINE
+37. small_stmt → ID small_stmt_tail
+38. small_stmt_tail → term_prime expr_tail
+39. term_prime → LPAR arg_list_opt RPAR
+40. arg_list_opt → arg_list
+41. arg_list → expr arg_list_tail
+42. expr → term expr_tail
+43. term → ID term_prime
+44. term_prime → ε
+45. expr_tail → ε
+46. arg_list_tail → ε
+47. expr_tail → ε
+48. stmt_list → ε
+49. stmt_list → ε

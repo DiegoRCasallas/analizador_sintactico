@@ -78,11 +78,6 @@ def gather_expected_for_nonterminal(nonterminal, table):
     return readable if readable else [readable_of_terminal('EOF')]
 
 def parse(tokens, table, grammar, start_symbol, debug=False):
-    """
-    Parsea la lista de tokens usando la tabla predictiva.
-    Retorna (True, mensaje) si éxito o (False, mensaje_de_error_primer).
-    Parámetro debug imprime trazas de pila y cursor si se pasa True.
-    """
     from collections import deque
 
     stack = deque()
@@ -94,10 +89,11 @@ def parse(tokens, table, grammar, start_symbol, debug=False):
     if n == 0:
         return False, '<0, 0> Error sintactico: se encontro: ""; se esperaba: "EOF".'
 
-    # Asegurar que hay un EOF terminal al final
     if tokens[-1].type != 'EOF':
-        tokens = tokens + [Token('EOF', '<EOF>', tokens[-1].line, tokens[-1].col+1)]
+        tokens = tokens + [Token('EOF', '<EOF>', tokens[-1].line, tokens[-1].col + 1)]
         n += 1
+
+    applied_productions = []
 
     while stack:
         top = stack.pop()
@@ -110,49 +106,41 @@ def parse(tokens, table, grammar, start_symbol, debug=False):
         if top == EPS:
             continue
 
-        # Si top es terminal (no está en grammar keys)
         if top not in grammar:
-            # si coincide con el terminal actual -> consumir
             if top == cur_term:
-                # si es EOF: consumo y aceptación inmediata
                 cursor += 1
                 if top == 'EOF':
-                    return True, "El analisis sintactico ha finalizado exitosamente."
+                    return True, "El analisis sintactico ha finalizado exitosamente.", applied_productions
                 continue
             else:
-                # token inesperado: preparar lista esperada simple
                 expected = [readable_of_terminal(top)]
                 msg = format_token_error(cur, expected)
-                return False, msg
+                return False, msg, []
         else:
-            # top es no terminal
             key = (top, cur_term)
             prod = table.get(key)
             if prod is None:
-                # construir lista de esperados para este no terminal
                 expected = Tmod.expected_tokens_for_nonterminal(top, table)
                 expected_readable = [readable_of_terminal(t) for t in expected] or [readable_of_terminal('EOF')]
                 msg = format_token_error(cur, expected_readable)
-                return False, msg
-            # aplicar producción: push símbolos inversamente
+                return False, msg, []
+            applied_productions.append((top, prod))
             for sym in reversed(prod):
                 if sym != EPS:
                     stack.append(sym)
 
-        # seguridad: si nos quedamos sin tokens antes de consumir todo
         if cursor >= n:
             last = tokens[-1]
-            return False, format_token_error(last, [readable_of_terminal('EOF')])
+            return False, format_token_error(last, [readable_of_terminal('EOF')]), []
 
-    # Si terminamos el bucle sin haber retornado, aceptar si el token actual es EOF o si cursor ya pasó EOF
     if cursor < n and tokens[cursor].type == 'EOF':
-        return True, "El analisis sintactico ha finalizado exitosamente."
+        return True, "El analisis sintactico ha finalizado exitosamente.", applied_productions
     if cursor >= n:
-        return True, "El analisis sintactico ha finalizado exitosamente."
+        return True, "El analisis sintactico ha finalizado exitosamente.", applied_productions
 
-    # Si quedó algún token no consumido, reportarlo como error (esperábamos EOF)
     cur = tokens[cursor]
-    return False, format_token_error(cur, [readable_of_terminal('EOF')])
+    return False, format_token_error(cur, [readable_of_terminal('EOF')]), []
+
 
 
 # Módulo ejecutable para pruebas rápidas integradas
