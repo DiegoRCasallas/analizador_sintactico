@@ -1,0 +1,1 @@
+<6, 5> Error sintactico: se encontro: "Error de sangría en línea 6. Nivel actual: 4, Esperado: 0"; se esperaba: "EOF".
