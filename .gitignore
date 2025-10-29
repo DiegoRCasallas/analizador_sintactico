@@ -135,6 +135,7 @@ pip-wheel-metadata/
 
 # Installer logs
 pip-log.txt
+reporte_sintactico.txt
 
 # Unit test / coverage reports
 htmlcov/
