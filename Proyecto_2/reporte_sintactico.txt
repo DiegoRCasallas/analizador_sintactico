@@ -1,0 +1,88 @@
+El analisis sintactico ha finalizado exitosamente.
+
+Secuencia de producciones aplicadas:
+1. program → stmt_list EOF
+2. stmt_list → stmt stmt_list
+3. stmt → compound_stmt
+4. compound_stmt → func_def
+5. func_def → KEYWORD_def ID LPAR param_list_opt RPAR COLON suite
+6. param_list_opt → param_list
+7. param_list → param param_list_tail
+8. param → ID param_fact
+9. param_fact → ε
+10. param_list_tail → ε
+11. suite → NEWLINE INDENT stmt_list DEDENT
+12. stmt_list → stmt stmt_list
+13. stmt → simple_stmt
+14. simple_stmt → small_stmt NEWLINE
+15. small_stmt → KEYWORD_return expr_opt
+16. expr_opt → expr
+17. expr → term expr_tail
+18. term → ID term_prime
+19. term_prime → ε
+20. expr_tail → ε
+21. stmt_list → ε
+22. stmt_list → stmt stmt_list
+23. stmt → compound_stmt
+24. compound_stmt → func_def
+25. func_def → KEYWORD_def ID LPAR param_list_opt RPAR COLON suite
+26. param_list_opt → ε
+27. suite → NEWLINE INDENT stmt_list DEDENT
+28. stmt_list → stmt stmt_list
+29. stmt → simple_stmt
+30. simple_stmt → small_stmt NEWLINE
+31. small_stmt → ID small_stmt_tail
+32. small_stmt_tail → ASSIGN expr
+33. expr → term expr_tail
+34. term → list_literal
+35. list_literal → LBRACK list_elements_opt RBRACK
+36. list_elements_opt → list_elements
+37. list_elements → expr list_elements_tail
+38. expr → term expr_tail
+39. term → literal
+40. literal → INT
+41. expr_tail → ε
+42. list_elements_tail → COMMA expr list_elements_tail
+43. expr → term expr_tail
+44. term → literal
+45. literal → INT
+46. expr_tail → ε
+47. list_elements_tail → COMMA expr list_elements_tail
+48. expr → term expr_tail
+49. term → literal
+50. literal → INT
+51. expr_tail → ε
+52. list_elements_tail → ε
+53. expr_tail → ε
+54. stmt_list → stmt stmt_list
+55. stmt → simple_stmt
+56. simple_stmt → small_stmt NEWLINE
+57. small_stmt → ID small_stmt_tail
+58. small_stmt_tail → ASSIGN expr
+59. expr → term expr_tail
+60. term → ID term_prime
+61. term_prime → LPAR arg_list_opt RPAR
+62. arg_list_opt → arg_list
+63. arg_list → expr arg_list_tail
+64. expr → term expr_tail
+65. term → ID term_prime
+66. term_prime → ε
+67. expr_tail → ε
+68. arg_list_tail → ε
+69. expr_tail → ε
+70. stmt_list → stmt stmt_list
+71. stmt → simple_stmt
+72. simple_stmt → small_stmt NEWLINE
+73. small_stmt → ID small_stmt_tail
+74. small_stmt_tail → term_prime expr_tail
+75. term_prime → LPAR arg_list_opt RPAR
+76. arg_list_opt → arg_list
+77. arg_list → expr arg_list_tail
+78. expr → term expr_tail
+79. term → ID term_prime
+80. term_prime → ε
+81. expr_tail → ε
+82. arg_list_tail → ε
+83. expr_tail → ε
+84. stmt_list → ε
+85. stmt_list → ε
