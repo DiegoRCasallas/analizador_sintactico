@@ -37,13 +37,14 @@ def lista_esperados_a_cadenas(terminales_esperados: List[str]) -> List[str]:
     return [legible_de_terminal(t) for t in terminales_esperados]
 
 def formatear_error_token(token: Token, terminales_esperados: List[str]) -> str:
-    lex = token.lexeme.replace('"', '\\"')
+    # El token proviene del lexer y tiene campos en español: `lexema`, `linea`, `col`.
+    lex = token.lexema.replace('"', '\\"')
     esperados_legibles = lista_esperados_a_cadenas(terminales_esperados)
     esperados_fmt = ', '.join(f'"{e}"' for e in esperados_legibles)
-    return f'<{token.line}, {token.col}> Error sintactico: se encontro: "{lex}"; se esperaba: {esperados_fmt}.'
+    return f'<{token.linea}, {token.col}> Error sintactico: se encontro: "{lex}"; se esperaba: {esperados_fmt}.'
 
 def formatear_error_indentacion(token: Token) -> str:
-    return f'<{token.line}, {token.col}>Error sintactico: falla de indentacion'
+    return f'<{token.linea}, {token.col}> Error sintactico: falla de indentacion'
 
 def construir_esperados_desde_tabla(no_terminal: str, tabla: dict) -> List[str]:
     esperados = sorted({ terminal for (A, terminal) in tabla.keys() if A == no_terminal })
@@ -57,4 +58,4 @@ def a_informacion_error_sintactico(token: Token, terminales_esperados: List[str]
     else:
         mensaje = formatear_error_token(token, terminales_esperados)
     esperados_legibles = lista_esperados_a_cadenas(terminales_esperados)
-    return InformacionErrorSintactico(token.line, token.col, token.lexeme, esperados_legibles, mensaje)
+    return InformacionErrorSintactico(token.linea, token.col, token.lexema, esperados_legibles, mensaje)

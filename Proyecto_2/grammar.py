@@ -20,7 +20,7 @@ gramatica = {
     ],
 
     'sentencia_simple': [
-        ['sentencia_pequena', 'NUEVALINEA']
+        ['sentencia_pequena', 'NEWLINE']
     ],
     'sentencia_pequena': [
         ['ID', 'cola_sentencia_pequena'],
@@ -190,7 +190,7 @@ gramatica = {
 
     'bloque': [
         ['sentencia_simple'],
-        ['NUEVALINEA', 'INDENT', 'lista_sentencias', 'DEDENT']
+        ['NEWLINE', 'INDENT', 'lista_sentencias', 'DEDENT']
     ],
 }
 

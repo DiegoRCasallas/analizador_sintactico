@@ -70,11 +70,24 @@ def _coincidir_numero(texto):
         return "INT", texto[:longitud]
 
 def _coincidir_cadena(texto):
-    if not texto or texto[0] not in ('\'', '\"'):
+    if not texto:
         return None, 0
 
-    caracter_comilla = texto[0]
-    longitud = 1
+    # Soportar prefijos comunes de cadenas como f"...", r'...', b"...", fr"..." etc.
+    prefijo_len = 0
+    # limitar prefijo a máximo 2 caracteres para evitar reconocer identificadores largos
+    while prefijo_len < 2 and prefijo_len < len(texto) and texto[prefijo_len] in 'frbFRB':
+        prefijo_len += 1
+
+    if prefijo_len > 0 and prefijo_len < len(texto) and texto[prefijo_len] in ('\'', '"'):
+        inicio_comilla = prefijo_len
+    elif texto[0] in ('\'', '"'):
+        inicio_comilla = 0
+    else:
+        return None, 0
+
+    caracter_comilla = texto[inicio_comilla]
+    longitud = inicio_comilla + 1
     escapado = False
 
     while longitud < len(texto):
@@ -84,8 +97,8 @@ def _coincidir_cadena(texto):
         elif caracter == '\\':
             escapado = True
         elif caracter == caracter_comilla:
+            # devolver el lexema incluyendo el posible prefijo
             return "STRING", texto[:longitud + 1]
-        
         longitud += 1
 
     return None, 0
@@ -151,8 +164,9 @@ def tokenizar(fuente):
 
     for linea_cruda in lineas:
         num_linea += 1
+        # Ignorar líneas en blanco (no producen tokens). Esto evita NEWLINE extras
+        # que rompan el análisis sintáctico en lugares vacíos.
         if linea_cruda.strip() == "":
-            tokens.append(Token("NEWLINE", "\\n", num_linea, 1))
             continue
 
         espacios_inicio = 0
@@ -168,11 +182,6 @@ def tokenizar(fuente):
                 break
         
         texto_linea_tras_indentacion = linea_cruda[col - 1:]
-
-        if texto_linea_tras_indentacion.lstrip().startswith("#"):
-            col_fin_comentario = len(linea_cruda.rstrip('\n')) + 1
-            tokens.append(Token("NEWLINE", "\\n", num_linea, col_fin_comentario))
-            continue
         
         if espacios_inicio > pila_indentacion[-1]:
             pila_indentacion.append(espacios_inicio)
@@ -183,6 +192,12 @@ def tokenizar(fuente):
                 tokens.append(Token("DEDENT", "<DEDENT>", num_linea, col))
             if espacios_inicio != pila_indentacion[-1]:
                 raise ErrorLexer(f"Error de sangría en línea {num_linea}. Nivel actual: {espacios_inicio}, Esperado: {pila_indentacion[-1]}")
+        # Si después del indent/dedent la línea comienza con comentario, no debemos generar
+        # un token NEWLINE adicional: las líneas de comentario se ignoran (pero conservamos
+        # los tokens INDENT/DEDENT que se hayan emitido anteriormente).
+        if texto_linea_tras_indentacion.lstrip().startswith("#"):
+            # simplemente omitir la línea de comentario
+            continue
         
         pos = col - 1
         texto_linea = linea_cruda.rstrip("\n")

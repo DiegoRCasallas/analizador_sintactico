@@ -1,88 +1,183 @@
 El analisis sintactico ha finalizado exitosamente.
 
 Secuencia de producciones aplicadas:
-1. program → stmt_list EOF
-2. stmt_list → stmt stmt_list
-3. stmt → compound_stmt
-4. compound_stmt → func_def
-5. func_def → KEYWORD_def ID LPAR param_list_opt RPAR COLON suite
-6. param_list_opt → param_list
-7. param_list → param param_list_tail
+1. programa → lista_sentencias EOF
+2. lista_sentencias → sentencia lista_sentencias
+3. sentencia → sentencia_compuesta
+4. sentencia_compuesta → def_funcion
+5. def_funcion → KEYWORD_def ID LPAR lista_params_opcional RPAR COLON bloque
+6. lista_params_opcional → lista_params
+7. lista_params → param cola_lista_params
 8. param → ID param_fact
 9. param_fact → ε
-10. param_list_tail → ε
-11. suite → NEWLINE INDENT stmt_list DEDENT
-12. stmt_list → stmt stmt_list
-13. stmt → simple_stmt
-14. simple_stmt → small_stmt NEWLINE
-15. small_stmt → KEYWORD_return expr_opt
-16. expr_opt → expr
-17. expr → term expr_tail
-18. term → ID term_prime
-19. term_prime → ε
-20. expr_tail → ε
-21. stmt_list → ε
-22. stmt_list → stmt stmt_list
-23. stmt → compound_stmt
-24. compound_stmt → func_def
-25. func_def → KEYWORD_def ID LPAR param_list_opt RPAR COLON suite
-26. param_list_opt → ε
-27. suite → NEWLINE INDENT stmt_list DEDENT
-28. stmt_list → stmt stmt_list
-29. stmt → simple_stmt
-30. simple_stmt → small_stmt NEWLINE
-31. small_stmt → ID small_stmt_tail
-32. small_stmt_tail → ASSIGN expr
-33. expr → term expr_tail
-34. term → list_literal
-35. list_literal → LBRACK list_elements_opt RBRACK
-36. list_elements_opt → list_elements
-37. list_elements → expr list_elements_tail
-38. expr → term expr_tail
-39. term → literal
-40. literal → INT
-41. expr_tail → ε
-42. list_elements_tail → COMMA expr list_elements_tail
-43. expr → term expr_tail
-44. term → literal
-45. literal → INT
-46. expr_tail → ε
-47. list_elements_tail → COMMA expr list_elements_tail
-48. expr → term expr_tail
-49. term → literal
-50. literal → INT
-51. expr_tail → ε
-52. list_elements_tail → ε
-53. expr_tail → ε
-54. stmt_list → stmt stmt_list
-55. stmt → simple_stmt
-56. simple_stmt → small_stmt NEWLINE
-57. small_stmt → ID small_stmt_tail
-58. small_stmt_tail → ASSIGN expr
-59. expr → term expr_tail
-60. term → ID term_prime
-61. term_prime → LPAR arg_list_opt RPAR
-62. arg_list_opt → arg_list
-63. arg_list → expr arg_list_tail
-64. expr → term expr_tail
-65. term → ID term_prime
-66. term_prime → ε
-67. expr_tail → ε
-68. arg_list_tail → ε
-69. expr_tail → ε
-70. stmt_list → stmt stmt_list
-71. stmt → simple_stmt
-72. simple_stmt → small_stmt NEWLINE
-73. small_stmt → ID small_stmt_tail
-74. small_stmt_tail → term_prime expr_tail
-75. term_prime → LPAR arg_list_opt RPAR
-76. arg_list_opt → arg_list
-77. arg_list → expr arg_list_tail
-78. expr → term expr_tail
-79. term → ID term_prime
-80. term_prime → ε
-81. expr_tail → ε
-82. arg_list_tail → ε
-83. expr_tail → ε
-84. stmt_list → ε
-85. stmt_list → ε
+10. cola_lista_params → ε
+11. bloque → NEWLINE INDENT lista_sentencias DEDENT
+12. lista_sentencias → sentencia lista_sentencias
+13. sentencia → sentencia_compuesta
+14. sentencia_compuesta → sentencia_if
+15. sentencia_if → KEYWORD_if expr COLON bloque elif_estrella sino_opcional
+16. expr → termino cola_expr
+17. termino → ID cola_termino
+18. cola_termino → ε
+19. cola_expr → BINOP termino cola_expr
+20. termino → literal
+21. literal → INT
+22. cola_expr → ε
+23. bloque → NEWLINE INDENT lista_sentencias DEDENT
+24. lista_sentencias → sentencia lista_sentencias
+25. sentencia → sentencia_simple
+26. sentencia_simple → sentencia_pequena NEWLINE
+27. sentencia_pequena → KEYWORD_return expr_opcional
+28. expr_opcional → expr
+29. expr → termino cola_expr
+30. termino → literal
+31. literal → KEYWORD_False
+32. cola_expr → ε
+33. lista_sentencias → ε
+34. elif_estrella → ε
+35. sino_opcional → ε
+36. lista_sentencias → sentencia lista_sentencias
+37. sentencia → sentencia_compuesta
+38. sentencia_compuesta → sentencia_for
+39. sentencia_for → KEYWORD_for ID KEYWORD_in expr COLON bloque
+40. expr → termino cola_expr
+41. termino → ID cola_termino
+42. cola_termino → LPAR lista_args_opcional RPAR
+43. lista_args_opcional → lista_args
+44. lista_args → expr cola_lista_args
+45. expr → termino cola_expr
+46. termino → literal
+47. literal → INT
+48. cola_expr → ε
+49. cola_lista_args → COMMA expr cola_lista_args
+50. expr → termino cola_expr
+51. termino → ID cola_termino
+52. cola_termino → LPAR lista_args_opcional RPAR
+53. lista_args_opcional → lista_args
+54. lista_args → expr cola_lista_args
+55. expr → termino cola_expr
+56. termino → ID cola_termino
+57. cola_termino → ε
+58. cola_expr → BINOP termino cola_expr
+59. termino → literal
+60. literal → FLOAT
+61. cola_expr → ε
+62. cola_lista_args → ε
+63. cola_expr → BINOP termino cola_expr
+64. termino → literal
+65. literal → INT
+66. cola_expr → ε
+67. cola_lista_args → ε
+68. cola_expr → ε
+69. bloque → NEWLINE INDENT lista_sentencias DEDENT
+70. lista_sentencias → sentencia lista_sentencias
+71. sentencia → sentencia_compuesta
+72. sentencia_compuesta → sentencia_if
+73. sentencia_if → KEYWORD_if expr COLON bloque elif_estrella sino_opcional
+74. expr → termino cola_expr
+75. termino → ID cola_termino
+76. cola_termino → ε
+77. cola_expr → BINOP termino cola_expr
+78. termino → ID cola_termino
+79. cola_termino → ε
+80. cola_expr → BINOP termino cola_expr
+81. termino → literal
+82. literal → INT
+83. cola_expr → ε
+84. bloque → NEWLINE INDENT lista_sentencias DEDENT
+85. lista_sentencias → sentencia lista_sentencias
+86. sentencia → sentencia_simple
+87. sentencia_simple → sentencia_pequena NEWLINE
+88. sentencia_pequena → KEYWORD_return expr_opcional
+89. expr_opcional → expr
+90. expr → termino cola_expr
+91. termino → literal
+92. literal → KEYWORD_False
+93. cola_expr → ε
+94. lista_sentencias → ε
+95. elif_estrella → ε
+96. sino_opcional → ε
+97. lista_sentencias → ε
+98. lista_sentencias → sentencia lista_sentencias
+99. sentencia → sentencia_simple
+100. sentencia_simple → sentencia_pequena NEWLINE
+101. sentencia_pequena → KEYWORD_return expr_opcional
+102. expr_opcional → expr
+103. expr → termino cola_expr
+104. termino → literal
+105. literal → KEYWORD_True
+106. cola_expr → ε
+107. lista_sentencias → ε
+108. lista_sentencias → sentencia lista_sentencias
+109. sentencia → sentencia_simple
+110. sentencia_simple → sentencia_pequena NEWLINE
+111. sentencia_pequena → ID cola_sentencia_pequena
+112. cola_sentencia_pequena → ASSIGN expr
+113. expr → termino cola_expr
+114. termino → ID cola_termino
+115. cola_termino → LPAR lista_args_opcional RPAR
+116. lista_args_opcional → lista_args
+117. lista_args → expr cola_lista_args
+118. expr → termino cola_expr
+119. termino → ID cola_termino
+120. cola_termino → LPAR lista_args_opcional RPAR
+121. lista_args_opcional → lista_args
+122. lista_args → expr cola_lista_args
+123. expr → termino cola_expr
+124. termino → literal
+125. literal → STRING
+126. cola_expr → ε
+127. cola_lista_args → ε
+128. cola_expr → ε
+129. cola_lista_args → ε
+130. cola_expr → ε
+131. lista_sentencias → sentencia lista_sentencias
+132. sentencia → sentencia_compuesta
+133. sentencia_compuesta → sentencia_if
+134. sentencia_if → KEYWORD_if expr COLON bloque elif_estrella sino_opcional
+135. expr → termino cola_expr
+136. termino → ID cola_termino
+137. cola_termino → LPAR lista_args_opcional RPAR
+138. lista_args_opcional → lista_args
+139. lista_args → expr cola_lista_args
+140. expr → termino cola_expr
+141. termino → ID cola_termino
+142. cola_termino → ε
+143. cola_expr → ε
+144. cola_lista_args → ε
+145. cola_expr → ε
+146. bloque → NEWLINE INDENT lista_sentencias DEDENT
+147. lista_sentencias → sentencia lista_sentencias
+148. sentencia → sentencia_simple
+149. sentencia_simple → sentencia_pequena NEWLINE
+150. sentencia_pequena → ID cola_sentencia_pequena
+151. cola_sentencia_pequena → cola_termino cola_expr
+152. cola_termino → LPAR lista_args_opcional RPAR
+153. lista_args_opcional → lista_args
+154. lista_args → expr cola_lista_args
+155. expr → termino cola_expr
+156. termino → literal
+157. literal → STRING
+158. cola_expr → ε
+159. cola_lista_args → ε
+160. cola_expr → ε
+161. lista_sentencias → ε
+162. elif_estrella → ε
+163. sino_opcional → KEYWORD_else COLON bloque
+164. bloque → NEWLINE INDENT lista_sentencias DEDENT
+165. lista_sentencias → sentencia lista_sentencias
+166. sentencia → sentencia_simple
+167. sentencia_simple → sentencia_pequena NEWLINE
+168. sentencia_pequena → ID cola_sentencia_pequena
+169. cola_sentencia_pequena → cola_termino cola_expr
+170. cola_termino → LPAR lista_args_opcional RPAR
+171. lista_args_opcional → lista_args
+172. lista_args → expr cola_lista_args
+173. expr → termino cola_expr
+174. termino → literal
+175. literal → STRING
+176. cola_expr → ε
+177. cola_lista_args → ε
+178. cola_expr → ε
+179. lista_sentencias → ε
+180. lista_sentencias → ε
