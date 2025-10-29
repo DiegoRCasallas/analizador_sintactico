@@ -1,18 +1,18 @@
 from collections import namedtuple
 import string
 
-Token = namedtuple("Token", ["type", "lexeme", "line", "col"])
+Token = namedtuple("Token", ["tipo", "lexema", "linea", "col"])
 
-class LexerError(Exception):
+class ErrorLexer(Exception):
     pass
 
-KEYWORDS = {
+PALABRAS_CLAVE = {
     "def", "if", "else", "elif", "while", "for",
     "return", "pass", "break", "continue", "in",
     "and", "or", "not", "True", "False", "None"
 }
 
-MULTI_CHAR_TOKENS = {
+TOKENS_MULTICARACTER = {
     "OP": ["**", "+", "-", "*", "/", "%"],
     "CMP": ["==", "!=", "<=", ">="],
     "ASSIGN": ["="],
@@ -21,7 +21,7 @@ MULTI_CHAR_TOKENS = {
     ]
 }
 
-SINGLE_CHAR_MAP = {
+MAPEO_CARACTER_UNICO = {
     ":": "COLON", ",": "COMMA", ".": "DOT", "(": "LPAR", ")": "RPAR",
     "[": "LBRACK", "]": "RBRACK", "{": "LBRACE", "}": "RBRACE",
     "<": "CMP", ">": "CMP", "!": "CMP",
@@ -29,72 +29,72 @@ SINGLE_CHAR_MAP = {
     "=": "ASSIGN"
 }
 
-ID_START_CHARS = string.ascii_letters + "_"
-ID_CONTINUE_CHARS = string.ascii_letters + string.digits + "_"
+CARACTERES_INICIO_ID = string.ascii_letters + "_"
+CARACTERES_CONTINUACION_ID = string.ascii_letters + string.digits + "_"
 
-def _match_identifier_or_keyword(text):
-    if not text or text[0] not in ID_START_CHARS:
+def _coincidir_identificador_o_palabra_clave(texto):
+    if not texto or texto[0] not in CARACTERES_INICIO_ID:
         return None, 0
 
-    length = 1
-    while length < len(text) and text[length] in ID_CONTINUE_CHARS:
-        length += 1
+    longitud = 1
+    while longitud < len(texto) and texto[longitud] in CARACTERES_CONTINUACION_ID:
+        longitud += 1
 
-    lexeme = text[:length]
-    typ = "KEYWORD" if lexeme in KEYWORDS else "ID"
-    return typ, lexeme
+    lexema = texto[:longitud]
+    tipo = "KEYWORD" if lexema in PALABRAS_CLAVE else "ID"
+    return tipo, lexema
 
-def _match_number(text):
-    if not text or text[0] not in string.digits:
+def _coincidir_numero(texto):
+    if not texto or texto[0] not in string.digits:
         return None, 0
 
-    has_dot = False
-    length = 0
-    while length < len(text) and text[length] in string.digits:
-        length += 1
+    tiene_punto = False
+    longitud = 0
+    while longitud < len(texto) and texto[longitud] in string.digits:
+        longitud += 1
 
-    if length < len(text) and text[length] == '.':
-        if length + 1 < len(text) and text[length + 1] in string.digits:
-            has_dot = True
-            length += 1
-            while length < len(text) and text[length] in string.digits:
-                length += 1
-        elif length + 1 == len(text) or text[length+1] not in ID_CONTINUE_CHARS:
+    if longitud < len(texto) and texto[longitud] == '.':
+        if longitud + 1 < len(texto) and texto[longitud + 1] in string.digits:
+            tiene_punto = True
+            longitud += 1
+            while longitud < len(texto) and texto[longitud] in string.digits:
+                longitud += 1
+        elif longitud + 1 == len(texto) or texto[longitud+1] not in CARACTERES_CONTINUACION_ID:
              pass
         else:
              pass
 
-    if has_dot:
-        return "FLOAT", text[:length]
+    if tiene_punto:
+        return "FLOAT", texto[:longitud]
     else:
-        return "INT", text[:length]
+        return "INT", texto[:longitud]
 
-def _match_string(text):
-    if not text or text[0] not in ('\'', '\"'):
+def _coincidir_cadena(texto):
+    if not texto or texto[0] not in ('\'', '\"'):
         return None, 0
 
-    quote_char = text[0]
-    length = 1
-    escaped = False
+    caracter_comilla = texto[0]
+    longitud = 1
+    escapado = False
 
-    while length < len(text):
-        char = text[length]
-        if escaped:
-            escaped = False
-        elif char == '\\':
-            escaped = True
-        elif char == quote_char:
-            return "STRING", text[:length + 1]
+    while longitud < len(texto):
+        caracter = texto[longitud]
+        if escapado:
+            escapado = False
+        elif caracter == '\\':
+            escapado = True
+        elif caracter == caracter_comilla:
+            return "STRING", texto[:longitud + 1]
         
-        length += 1
+        longitud += 1
 
     return None, 0
 
-def _match_symbol(text):
-    if not text:
+def _coincidir_simbolo(texto):
+    if not texto:
         return None, 0
 
-    all_multi_tokens = sorted([
+    todos_tokens_multicaracter = sorted([
         ('**', 'OP'), ('==', 'CMP'), ('!=', 'CMP'), ('<=', 'CMP'), ('>=', 'CMP'), 
         ('+', 'OP'), ('-', 'OP'), ('*', 'OP'), ('/', 'OP'), ('%', 'OP'),
         ('=', 'ASSIGN'), ('<', 'CMP'), ('>', 'CMP'),
@@ -103,117 +103,117 @@ def _match_symbol(text):
         ('{', 'LBRACE'), ('}', 'RBRACE')
     ], key=lambda x: len(x[0]), reverse=True)
 
-    for lexeme_test, typ_test in all_multi_tokens:
-        if text.startswith(lexeme_test):
-            return typ_test, lexeme_test
+    for lexema_prueba, tipo_prueba in todos_tokens_multicaracter:
+        if texto.startswith(lexema_prueba):
+            return tipo_prueba, lexema_prueba
 
     return None, 0
 
 
-def _get_next_token(line_text, pos):
-    start_pos = pos
-    while start_pos < len(line_text) and line_text[start_pos] in ' \t':
-        start_pos += 1
+def _obtener_siguiente_token(linea_texto, pos):
+    inicio_pos = pos
+    while inicio_pos < len(linea_texto) and linea_texto[inicio_pos] in ' \t':
+        inicio_pos += 1
 
-    if start_pos == len(line_text):
-        return None, None, start_pos
+    if inicio_pos == len(linea_texto):
+        return None, None, inicio_pos
 
-    current_text = line_text[start_pos:]
+    texto_actual = linea_texto[inicio_pos:]
 
-    typ, lexeme = _match_string(current_text)
-    if typ:
-        return typ, lexeme, start_pos + len(lexeme)
+    tipo, lexema = _coincidir_cadena(texto_actual)
+    if tipo:
+        return tipo, lexema, inicio_pos + len(lexema)
 
-    if current_text.startswith('#'):
-        return "COMMENT", current_text, len(line_text)
+    if texto_actual.startswith('#'):
+        return "COMMENT", texto_actual, len(linea_texto)
 
-    typ, lexeme = _match_identifier_or_keyword(current_text)
-    if typ:
-        return typ, lexeme, start_pos + len(lexeme)
+    tipo, lexema = _coincidir_identificador_o_palabra_clave(texto_actual)
+    if tipo:
+        return tipo, lexema, inicio_pos + len(lexema)
 
-    typ, lexeme = _match_number(current_text)
-    if typ:
-        return typ, lexeme, start_pos + len(lexeme)
+    tipo, lexema = _coincidir_numero(texto_actual)
+    if tipo:
+        return tipo, lexema, inicio_pos + len(lexema)
 
-    typ, lexeme = _match_symbol(current_text)
-    if typ:
-        return typ, lexeme, start_pos + len(lexeme)
+    tipo, lexema = _coincidir_simbolo(texto_actual)
+    if tipo:
+        return tipo, lexema, inicio_pos + len(lexema)
 
-    return "MISMATCH", current_text[0], start_pos + 1
+    return "MISMATCH", texto_actual[0], inicio_pos + 1
 
 
-def tokenize(source):
-    source = source.replace('\r\n', '\n').replace('\r', '\n')
+def tokenizar(fuente):
+    fuente = fuente.replace('\r\n', '\n').replace('\r', '\n')
     tokens = []
-    indent_stack = [0]
-    lines = source.splitlines(True)
-    line_no = 0
+    pila_indentacion = [0]
+    lineas = fuente.splitlines(True)
+    num_linea = 0
 
-    for raw_line in lines:
-        line_no += 1
-        if raw_line.strip() == "":
-            tokens.append(Token("NEWLINE", "\\n", line_no, 1))
+    for linea_cruda in lineas:
+        num_linea += 1
+        if linea_cruda.strip() == "":
+            tokens.append(Token("NEWLINE", "\\n", num_linea, 1))
             continue
 
-        leading = 0
+        espacios_inicio = 0
         col = 1
-        for ch in raw_line:
+        for ch in linea_cruda:
             if ch == " ":
-                leading += 1
+                espacios_inicio += 1
                 col += 1
             elif ch == "\t":
-                leading += 4
+                espacios_inicio += 4
                 col += 1
             else:
                 break
         
-        line_text_after_indent = raw_line[col - 1:]
+        texto_linea_tras_indentacion = linea_cruda[col - 1:]
 
-        if line_text_after_indent.lstrip().startswith("#"):
-            comment_end_col = len(raw_line.rstrip('\n')) + 1
-            tokens.append(Token("NEWLINE", "\\n", line_no, comment_end_col))
+        if texto_linea_tras_indentacion.lstrip().startswith("#"):
+            col_fin_comentario = len(linea_cruda.rstrip('\n')) + 1
+            tokens.append(Token("NEWLINE", "\\n", num_linea, col_fin_comentario))
             continue
         
-        if leading > indent_stack[-1]:
-            indent_stack.append(leading)
-            tokens.append(Token("INDENT", "<INDENT>", line_no, 1))
+        if espacios_inicio > pila_indentacion[-1]:
+            pila_indentacion.append(espacios_inicio)
+            tokens.append(Token("INDENT", "<INDENT>", num_linea, 1))
         else:
-            while leading < indent_stack[-1]:
-                indent_stack.pop()
-                tokens.append(Token("DEDENT", "<DEDENT>", line_no, col))
-            if leading != indent_stack[-1]:
-                raise LexerError(f"Error de sangría en línea {line_no}. Nivel actual: {leading}, Esperado: {indent_stack[-1]}")
+            while espacios_inicio < pila_indentacion[-1]:
+                pila_indentacion.pop()
+                tokens.append(Token("DEDENT", "<DEDENT>", num_linea, col))
+            if espacios_inicio != pila_indentacion[-1]:
+                raise ErrorLexer(f"Error de sangría en línea {num_linea}. Nivel actual: {espacios_inicio}, Esperado: {pila_indentacion[-1]}")
         
         pos = col - 1
-        line_text = raw_line.rstrip("\n")
+        texto_linea = linea_cruda.rstrip("\n")
 
-        while pos < len(line_text):
-            typ, lexeme, next_pos = _get_next_token(line_text, pos)
+        while pos < len(texto_linea):
+            tipo, lexema, siguiente_pos = _obtener_siguiente_token(texto_linea, pos)
             
-            if pos < next_pos and all(c in ' \t' for c in line_text[pos:next_pos]):
-                pos = next_pos
+            if pos < siguiente_pos and all(c in ' \t' for c in texto_linea[pos:siguiente_pos]):
+                pos = siguiente_pos
                 continue
 
-            if typ is None:
+            if tipo is None:
                 break
             
-            token_col = pos + 1
+            col_token = pos + 1
 
-            if typ == "COMMENT":
-                pos = len(line_text)
+            if tipo == "COMMENT":
+                pos = len(texto_linea)
                 continue
-            elif typ == "MISMATCH":
-                 raise LexerError(f"Carácter ilegal {lexeme!r} en línea {line_no} col {token_col}")
+            elif tipo == "MISMATCH":
+                 raise ErrorLexer(f"Carácter ilegal {lexema!r} en línea {num_linea} col {col_token}")
             else:
-                tokens.append(Token(typ, lexeme, line_no, token_col))
+                tokens.append(Token(tipo, lexema, num_linea, col_token))
             
-            pos = next_pos
+            pos = siguiente_pos
 
-        tokens.append(Token("NEWLINE", "\\n", line_no, len(line_text) + 1))
+        tokens.append(Token("NEWLINE", "\\n", num_linea, len(texto_linea) + 1))
 
-    while len(indent_stack) > 1:
-        indent_stack.pop()
-        tokens.append(Token("DEDENT", "<DEDENT>", line_no + 1, 1))
+    while len(pila_indentacion) > 1:
+        pila_indentacion.pop()
+        tokens.append(Token("DEDENT", "<DEDENT>", num_linea + 1, 1))
 
-    tokens.append(Token("EOF", "<EOF>", line_no + 1, 1))
+    tokens.append(Token("EOF", "<EOF>", num_linea + 1, 1))
     return tokens

@@ -2,9 +2,9 @@ from typing import List
 from collections import namedtuple
 from lexer import Token
 
-SyntaxErrorInfo = namedtuple("SyntaxErrorInfo", ["line", "col", "found_lexeme", "expected_list", "message"])
+InformacionErrorSintactico = namedtuple("InformacionErrorSintactico", ["linea", "col", "lexema_encontrado", "lista_esperados", "mensaje"])
 
-READABLE = {
+LEGIBLE = {
     'COLON': ':',
     'COMMA': ',',
     'DOT': '.',
@@ -15,46 +15,46 @@ READABLE = {
     'LBRACE': '{',
     'RBRACE': '}',
     'ASSIGN': '=',
-    'NEWLINE': 'NEWLINE',
-    'INDENT': 'INDENT',
-    'DEDENT': 'DEDENT',
+    'NEWLINE': 'NUEVALINEA',
+    'INDENT': 'INDENTACION',
+    'DEDENT': 'DEDENTACION',
     'EOF': 'EOF',
-    'ID': 'identifier',
-    'INT': 'integer',
-    'FLOAT': 'float',
-    'STRING': 'string',
-    'BINOP': 'operator',
+    'ID': 'identificador',
+    'INT': 'entero',
+    'FLOAT': 'flotante',
+    'STRING': 'cadena',
+    'BINOP': 'operador',
 }
 
-def readable_of_terminal(term: str) -> str:
-    if term in READABLE:
-        return READABLE[term]
-    if term.startswith('KEYWORD_'):
-        return term.split('KEYWORD_', 1)[1]
-    return term
+def legible_de_terminal(terminal: str) -> str:
+    if terminal in LEGIBLE:
+        return LEGIBLE[terminal]
+    if terminal.startswith('KEYWORD_'):
+        return terminal.split('KEYWORD_', 1)[1]
+    return terminal
 
-def expected_list_to_strings(expected_terms: List[str]) -> List[str]:
-    return [readable_of_terminal(t) for t in expected_terms]
+def lista_esperados_a_cadenas(terminales_esperados: List[str]) -> List[str]:
+    return [legible_de_terminal(t) for t in terminales_esperados]
 
-def format_token_error(token: Token, expected_terms: List[str]) -> str:
+def formatear_error_token(token: Token, terminales_esperados: List[str]) -> str:
     lex = token.lexeme.replace('"', '\\"')
-    expected_readable = expected_list_to_strings(expected_terms)
-    expected_fmt = ', '.join(f'"{e}"' for e in expected_readable)
-    return f'<{token.line}, {token.col}> Error sintactico: se encontro: "{lex}"; se esperaba: {expected_fmt}.'
+    esperados_legibles = lista_esperados_a_cadenas(terminales_esperados)
+    esperados_fmt = ', '.join(f'"{e}"' for e in esperados_legibles)
+    return f'<{token.line}, {token.col}> Error sintactico: se encontro: "{lex}"; se esperaba: {esperados_fmt}.'
 
-def format_indentation_error(token: Token) -> str:
+def formatear_error_indentacion(token: Token) -> str:
     return f'<{token.line}, {token.col}>Error sintactico: falla de indentacion'
 
-def build_expected_from_table(nonterminal: str, table: dict) -> List[str]:
-    expected = sorted({ term for (A, term) in table.keys() if A == nonterminal })
-    if not expected:
-        expected = ['EOF']
-    return expected
+def construir_esperados_desde_tabla(no_terminal: str, tabla: dict) -> List[str]:
+    esperados = sorted({ terminal for (A, terminal) in tabla.keys() if A == no_terminal })
+    if not esperados:
+        esperados = ['EOF']
+    return esperados
 
-def to_syntax_error_info(token: Token, expected_terms: List[str], indent_error: bool = False) -> SyntaxErrorInfo:
-    if indent_error:
-        msg = format_indentation_error(token)
+def a_informacion_error_sintactico(token: Token, terminales_esperados: List[str], error_indentacion: bool = False) -> InformacionErrorSintactico:
+    if error_indentacion:
+        mensaje = formatear_error_indentacion(token)
     else:
-        msg = format_token_error(token, expected_terms)
-    readable_expected = expected_list_to_strings(expected_terms)
-    return SyntaxErrorInfo(token.line, token.col, token.lexeme, readable_expected, msg)
+        mensaje = formatear_error_token(token, terminales_esperados)
+    esperados_legibles = lista_esperados_a_cadenas(terminales_esperados)
+    return InformacionErrorSintactico(token.line, token.col, token.lexeme, esperados_legibles, mensaje)

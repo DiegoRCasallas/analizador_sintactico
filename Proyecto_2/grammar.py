@@ -2,119 +2,119 @@ from copy import deepcopy
 
 EPS = 'ε'
 
-START_SYMBOL = 'program'
+SIMBOLO_INICIAL = 'programa'
 
-grammar = {
-    'program': [
-        ['stmt_list', 'EOF']
+gramatica = {
+    'programa': [
+        ['lista_sentencias', 'EOF']
     ],
 
-    'stmt_list': [
-        ['stmt', 'stmt_list'],
+    'lista_sentencias': [
+        ['sentencia', 'lista_sentencias'],
         [EPS]
     ],
 
-    'stmt': [
-        ['simple_stmt'],
-        ['compound_stmt']
+    'sentencia': [
+        ['sentencia_simple'],
+        ['sentencia_compuesta']
     ],
 
-    'simple_stmt': [
-        ['small_stmt', 'NEWLINE']
+    'sentencia_simple': [
+        ['sentencia_pequena', 'NUEVALINEA']
     ],
-    'small_stmt': [
-        ['ID', 'small_stmt_tail'],
-        ['literal', 'expr_tail'],
-        ['LPAR', 'expr', 'RPAR', 'expr_tail'],
+    'sentencia_pequena': [
+        ['ID', 'cola_sentencia_pequena'],
+        ['literal', 'cola_expr'],
+        ['LPAR', 'expr', 'RPAR', 'cola_expr'],
         ['KEYWORD_pass'],
         ['KEYWORD_break'],
         ['KEYWORD_continue'],
-        ['KEYWORD_return', 'expr_opt']
+        ['KEYWORD_return', 'expr_opcional']
     ],
-        'small_stmt_tail': [
+        'cola_sentencia_pequena': [
         ['ASSIGN', 'expr'],
-        ['term_prime', 'expr_tail']
+        ['cola_termino', 'cola_expr']
     ],
 
-    'return_stmt': [
-        ['KEYWORD_return', 'expr_opt']
+    'sentencia_return': [
+        ['KEYWORD_return', 'expr_opcional']
     ],
 
-    'expr_opt': [
+    'expr_opcional': [
         ['expr'],
         [EPS]
     ],
 
-    'pass_stmt': [
+    'sentencia_pass': [
         ['KEYWORD_pass']
     ],
 
-    'break_stmt': [
+    'sentencia_break': [
         ['KEYWORD_break']
     ],
 
-    'continue_stmt': [
+    'sentencia_continue': [
         ['KEYWORD_continue']
     ],
 
-    'target': [
+    'objetivo': [
         ['ID']
     ],
 
     'expr': [
-        ['term', 'expr_tail']
+        ['termino', 'cola_expr']
     ],
 
-    'expr_tail': [
-        ['BINOP', 'term', 'expr_tail'],
+    'cola_expr': [
+        ['BINOP', 'termino', 'cola_expr'],
         [EPS]
     ],
 
-    'term': [
+    'termino': [
         ['literal'],
-        ['ID', 'term_prime'],
-        ['list_literal'],
+        ['ID', 'cola_termino'],
+        ['literal_lista'],
         ['LPAR', 'expr', 'RPAR']
     ],
 
-    'term_prime': [
-        ['LPAR', 'arg_list_opt', 'RPAR'],
+    'cola_termino': [
+        ['LPAR', 'lista_args_opcional', 'RPAR'],
         [EPS]
     ],
 
-    'call': [
-        ['ID', 'LPAR', 'arg_list_opt', 'RPAR']
+    'llamada': [
+        ['ID', 'LPAR', 'lista_args_opcional', 'RPAR']
     ],
 
-    'arg_list_opt': [
-        ['arg_list'],
+    'lista_args_opcional': [
+        ['lista_args'],
         [EPS]
     ],
 
-    'arg_list': [
-        ['expr', 'arg_list_tail']
+    'lista_args': [
+        ['expr', 'cola_lista_args']
     ],
 
-    'arg_list_tail': [
-        ['COMMA', 'expr', 'arg_list_tail'],
+    'cola_lista_args': [
+        ['COMMA', 'expr', 'cola_lista_args'],
         [EPS]
     ],
 
-    'list_literal': [
-        ['LBRACK', 'list_elements_opt', 'RBRACK']
+    'literal_lista': [
+        ['LBRACK', 'elementos_lista_opcional', 'RBRACK']
     ],
 
-    'list_elements_opt': [
-        ['list_elements'],
+    'elementos_lista_opcional': [
+        ['elementos_lista'],
         [EPS]
     ],
 
-    'list_elements': [
-        ['expr', 'list_elements_tail']
+    'elementos_lista': [
+        ['expr', 'cola_elementos_lista']
     ],
 
-    'list_elements_tail': [
-        ['COMMA', 'expr', 'list_elements_tail'],
+    'cola_elementos_lista': [
+        ['COMMA', 'expr', 'cola_elementos_lista'],
         [EPS]
     ],
 
@@ -127,74 +127,74 @@ grammar = {
         ['KEYWORD_None']
     ],
 
-    'compound_stmt': [
-        ['if_stmt'],
-        ['while_stmt'],
-        ['for_stmt'],
-        ['func_def']
+    'sentencia_compuesta': [
+        ['sentencia_if'],
+        ['sentencia_while'],
+        ['sentencia_for'],
+        ['def_funcion']
     ],
 
-    'if_stmt': [
-        ['KEYWORD_if', 'expr', 'COLON', 'suite', 'elif_star', 'else_opt']
+    'sentencia_if': [
+        ['KEYWORD_if', 'expr', 'COLON', 'bloque', 'elif_estrella', 'sino_opcional']
     ],
 
-    'elif_star': [
-        ['elif_item', 'elif_star'],
+    'elif_estrella': [
+        ['item_elif', 'elif_estrella'],
         [EPS]
     ],
 
-    'elif_item': [
-        ['KEYWORD_elif', 'expr', 'COLON', 'suite']
+    'item_elif': [
+        ['KEYWORD_elif', 'expr', 'COLON', 'bloque']
     ],
 
-    'else_opt': [
-        ['KEYWORD_else', 'COLON', 'suite'],
+    'sino_opcional': [
+        ['KEYWORD_else', 'COLON', 'bloque'],
         [EPS]
     ],
 
-    'while_stmt': [
-        ['KEYWORD_while', 'expr', 'COLON', 'suite']
+    'sentencia_while': [
+        ['KEYWORD_while', 'expr', 'COLON', 'bloque']
     ],
 
-    'for_stmt': [
-        ['KEYWORD_for', 'ID', 'KEYWORD_in', 'expr', 'COLON', 'suite']
+    'sentencia_for': [
+        ['KEYWORD_for', 'ID', 'KEYWORD_in', 'expr', 'COLON', 'bloque']
     ],
 
-    'func_def': [
-        ['KEYWORD_def', 'ID', 'LPAR', 'param_list_opt', 'RPAR', 'COLON', 'suite']
+    'def_funcion': [
+        ['KEYWORD_def', 'ID', 'LPAR', 'lista_params_opcional', 'RPAR', 'COLON', 'bloque']
     ],
 
-    'param_list_opt': [
-        ['param_list'],
+    'lista_params_opcional': [
+        ['lista_params'],
         [EPS]
     ],
 
-    'param_list': [
-        ['param', 'param_list_tail']
+    'lista_params': [
+        ['param', 'cola_lista_params']
     ],
 
-    'param_list_tail': [
-        ['COMMA', 'param', 'param_list_tail'],
+    'cola_lista_params': [
+        ['COMMA', 'param', 'cola_lista_params'],
         [EPS]
     ],
 
     'param': [
         ['ID'],
-        ['ID', 'COLON', 'type_annotation']
+        ['ID', 'COLON', 'anotacion_tipo']
     ],
 
-    'type_annotation': [
+    'anotacion_tipo': [
         ['ID'],
         ['LBRACK', 'ID', 'RBRACK']
     ],
 
-    'suite': [
-        ['simple_stmt'],
-        ['NEWLINE', 'INDENT', 'stmt_list', 'DEDENT']
+    'bloque': [
+        ['sentencia_simple'],
+        ['NUEVALINEA', 'INDENT', 'lista_sentencias', 'DEDENT']
     ],
 }
 
-TERMINALS = {
+TERMINALES = {
     'KEYWORD_def', 'KEYWORD_if', 'KEYWORD_else', 'KEYWORD_elif', 'KEYWORD_while',
     'KEYWORD_for', 'KEYWORD_return', 'KEYWORD_pass', 'KEYWORD_break', 'KEYWORD_continue',
     'KEYWORD_in', 'KEYWORD_True', 'KEYWORD_False', 'KEYWORD_None',
@@ -204,101 +204,101 @@ TERMINALS = {
     'NEWLINE', 'INDENT', 'DEDENT', 'EOF'
 }
 
-def nonterminals_from_grammar(g):
+def no_terminales_de_gramatica(g):
     return set(g.keys())
 
-NONTERMINALS = nonterminals_from_grammar(grammar)
+NO_TERMINALES = no_terminales_de_gramatica(gramatica)
 
-def productions_list(grammar_dict):
-    out = []
-    for A, prods in grammar_dict.items():
+def lista_producciones(gramatica_dict):
+    salida = []
+    for A, prods in gramatica_dict.items():
         for prod in prods:
-            out.append((A, prod))
-    return out
+            salida.append((A, prod))
+    return salida
 
-def pretty_print(grammar_dict):
-    lines = []
-    for A, prods in grammar_dict.items():
+def imprimir_bonito(gramatica_dict):
+    lineas = []
+    for A, prods in gramatica_dict.items():
         rhs = [" ".join(p) for p in prods]
-        lines.append(f"{A} -> {' | '.join(rhs)}")
-    return "\n".join(lines)
+        lineas.append(f"{A} -> {' | '.join(rhs)}")
+    return "\n".join(lineas)
 
-def remove_immediate_left_recursion(g):
+def eliminar_recursion_izquierda_inmediata(g):
     G = deepcopy(g)
-    new_G = {}
+    nueva_G = {}
     for A in G:
         prods = G[A]
-        left_recursive = []
-        non_recursive = []
+        recursivas = []
+        no_recursivas = []
         for prod in prods:
             if len(prod) > 0 and prod[0] == A:
-                left_recursive.append(prod[1:])
+                recursivas.append(prod[1:])
             else:
-                non_recursive.append(prod)
+                no_recursivas.append(prod)
 
-        if left_recursive:
-            A_prime = A + "_rec"
-            new_prods_for_A = []
-            for beta in non_recursive:
+        if recursivas:
+            A_prima = A + "_rec"
+            nuevas_prods_para_A = []
+            for beta in no_recursivas:
                 if beta == [EPS]:
-                    new_prods_for_A.append([A_prime])
+                    nuevas_prods_para_A.append([A_prima])
                 else:
-                    new_prods_for_A.append(beta + [A_prime])
-            new_prods_for_A_prime = []
-            for alpha in left_recursive:
-                new_prods_for_A_prime.append(alpha + [A_prime])
-            new_prods_for_A_prime.append([EPS])
+                    nuevas_prods_para_A.append(beta + [A_prima])
+            nuevas_prods_para_A_prima = []
+            for alpha in recursivas:
+                nuevas_prods_para_A_prima.append(alpha + [A_prima])
+            nuevas_prods_para_A_prima.append([EPS])
 
-            new_G[A] = new_prods_for_A
-            new_G[A_prime] = new_prods_for_A_prime
+            nueva_G[A] = nuevas_prods_para_A
+            nueva_G[A_prima] = nuevas_prods_para_A_prima
         else:
-            new_G[A] = prods
-    return new_G
+            nueva_G[A] = prods
+    return nueva_G
 
-def left_factor(grammar_dict):
-    G = deepcopy(grammar_dict)
-    changed = True
-    while changed:
-        changed = False
-        newG = {}
+def factorizar_izquierda(gramatica_dict):
+    G = deepcopy(gramatica_dict)
+    cambiado = True
+    while cambiado:
+        cambiado = False
+        nuevaG = {}
         for A, prods in G.items():
-            groups = {}
+            grupos = {}
             for p in prods:
-                key = p[0] if len(p) > 0 else EPS
-                groups.setdefault(key, []).append(p)
-            new_prods_for_A = []
-            for key, group in groups.items():
-                if key != EPS and len(group) > 1:
+                clave = p[0] if len(p) > 0 else EPS
+                grupos.setdefault(clave, []).append(p)
+            nuevas_prods_para_A = []
+            for clave, grupo in grupos.items():
+                if clave != EPS and len(grupo) > 1:
                     A_fact = A + "_fact"
-                    changed = True
-                    new_prods_for_A.append([key, A_fact])
-                    rest_prods = []
-                    for prod in group:
+                    cambiado = True
+                    nuevas_prods_para_A.append([clave, A_fact])
+                    restos = []
+                    for prod in grupo:
                         if len(prod) > 1:
-                            rest_prods.append(prod[1:])
+                            restos.append(prod[1:])
                         else:
-                            rest_prods.append([EPS])
-                    newG[A_fact] = rest_prods
+                            restos.append([EPS])
+                    nuevaG[A_fact] = restos
                 else:
-                    for prod in group:
-                        new_prods_for_A.append(prod)
-            newG[A] = new_prods_for_A
-        G = newG
+                    for prod in grupo:
+                        nuevas_prods_para_A.append(prod)
+            nuevaG[A] = nuevas_prods_para_A
+        G = nuevaG
     return G
 
-def normalize_grammar_for_ll1(base_grammar):
-    g1 = remove_immediate_left_recursion(base_grammar)
-    g2 = left_factor(g1)
+def normalizar_gramatica_para_ll1(gramatica_base):
+    g1 = eliminar_recursion_izquierda_inmediata(gramatica_base)
+    g2 = factorizar_izquierda(g1)
     return g2
 
-def token_to_grammar_terminal(token_type, token_lexeme):
-    if token_type == 'KEYWORD':
-        return f"KEYWORD_{token_lexeme}"
-    return token_type
+def token_a_terminal_gramatica(tipo_token, lexema_token):
+    if tipo_token == 'KEYWORD':
+        return f"KEYWORD_{lexema_token}"
+    return tipo_token
 
 if __name__ == "__main__":
     print("Gramática original:")
-    print(pretty_print(grammar))
-    print("\nLL1\n")
-    norm = normalize_grammar_for_ll1(grammar)
-    print(pretty_print(norm))
+    print(imprimir_bonito(gramatica))
+    print("\n--- Normalizando para LL(1) ---\n")
+    norm = normalizar_gramatica_para_ll1(gramatica)
+    print(imprimir_bonito(norm))

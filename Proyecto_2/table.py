@@ -2,49 +2,49 @@ from collections import defaultdict
 import grammar as Gmod
 import sets as Smod
 
-def build_predictive_table(grammar, start_symbol):
-    norm_g = Gmod.normalize_grammar_for_ll1(grammar)
+def construir_tabla_predictiva(gramatica, simbolo_inicial):
+    gramatica_norm = Gmod.normalizar_gramatica_para_ll1(gramatica)
 
-    FIRST, FOLLOW, SELECT, parse_table_idx = Smod.compute_all_sets(norm_g, start_symbol)
+    FIRST, FOLLOW, SELECT, tabla_indices = Smod.calcular_todos_conjuntos(gramatica_norm, simbolo_inicial)
 
-    table = {}
-    for (A, idx), sel_set in SELECT.items():
-        prod = norm_g[A][idx]
-        for term in sel_set:
-            key = (A, term)
-            if key in table:
-                existing = table[key]
-                if existing != prod:
-                    raise ValueError(f"Conflicto en la tabla predictiva para {A} en el terminal {term}: {existing} vs {prod}")
+    tabla = {}
+    for (A, idx), conjunto_sel in SELECT.items():
+        prod = gramatica_norm[A][idx]
+        for terminal in conjunto_sel:
+            clave = (A, terminal)
+            if clave in tabla:
+                existente = tabla[clave]
+                if existente != prod:
+                    raise ValueError(f"Conflicto en tabla predictiva para {A} en terminal {terminal}: {existente} vs {prod}")
             else:
-                table[key] = prod
-    return table, FIRST, FOLLOW, SELECT
+                tabla[clave] = prod
+    return tabla, FIRST, FOLLOW, SELECT
 
-def expected_tokens_for_nonterminal(nonterminal, table):
-    expected = sorted({ term for (A, term), prod in table.items() if A == nonterminal })
-    return expected
+def terminales_esperados_para_no_terminal(no_terminal, tabla):
+    esperados = sorted({ terminal for (A, terminal), prod in tabla.items() if A == no_terminal })
+    return esperados
 
-def productions_for_nonterminal(nonterminal, grammar):
-    norm_g = Gmod.normalize_grammar_for_ll1(grammar)
-    return norm_g.get(nonterminal, [])
+def producciones_para_no_terminal(no_terminal, gramatica):
+    gramatica_norm = Gmod.normalizar_gramatica_para_ll1(gramatica)
+    return gramatica_norm.get(no_terminal, [])
 
-def pretty_print_table(table, max_entries=200):
-    lines = []
-    count = 0
-    for (A, term), prod in sorted(table.items(), key=lambda x: (x[0][0], x[0][1])):
-        lines.append(f"M[{A}, {term}] = {' '.join(prod)}")
-        count += 1
-        if count >= max_entries:
+def imprimir_tabla_bonita(tabla, max_entradas=200):
+    lineas = []
+    contador = 0
+    for (A, terminal), prod in sorted(tabla.items(), key=lambda x: (x[0][0], x[0][1])):
+        lineas.append(f"M[{A}, {terminal}] = {' '.join(prod)}")
+        contador += 1
+        if contador >= max_entradas:
             break
-    return "\n".join(lines)
+    return "\n".join(lineas)
 
 if __name__ == "__main__":
     import grammar as G
     try:
-        table, FIRST, FOLLOW, SELECT = build_predictive_table(G.grammar, G.START_SYMBOL)
+        tabla, FIRST, FOLLOW, SELECT = construir_tabla_predictiva(G.gramatica, G.SIMBOLO_INICIAL)
         print("Algunas entradas de la tabla predictiva LL(1):")
-        print(pretty_print_table(table, max_entries=80))
-        expected = expected_tokens_for_nonterminal('stmt', table)
-        print("\nTokens esperados para 'stmt':", expected)
+        print(imprimir_tabla_bonita(tabla, max_entradas=80))
+        esperados = terminales_esperados_para_no_terminal('sentencia', tabla)
+        print("\nTokens esperados para 'sentencia':", esperados)
     except ValueError as e:
         print("Error construyendo tabla predictiva LL(1):", e)

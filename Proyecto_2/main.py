@@ -1,82 +1,82 @@
 import sys
-from lexer import tokenize, LexerError, Token
+from lexer import tokenizar, ErrorLexer, Token
 import grammar as Gmod
 import table as Tmod
 import parser as Pmod
 import errors as Emod
 
-OUTPUT_FILENAME = "reporte_sintactico.txt"
+NOMBRE_ARCHIVO_SALIDA = "reporte_sintactico.txt"
 
-def read_source_from_args_or_stdin():
+def leer_fuente_desde_argumentos_o_entrada():
     if len(sys.argv) >= 2:
-        path = sys.argv[1]
+        ruta = sys.argv[1]
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(ruta, "r", encoding="utf-8") as f:
                 return f.read()
         except Exception as e:
-            print(f"Error leyendo archivo {path}: {e}", file=sys.stderr)
+            print(f"Error leyendo archivo {ruta}: {e}", file=sys.stderr)
             sys.exit(1)
     return sys.stdin.read()
 
-def write_output(message, applied=None):
+def escribir_salida(mensaje, aplicadas=None):
     try:
-        with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
-            f.write(message + ("\n" if not message.endswith("\n") else ""))
-            if applied:
+        with open(NOMBRE_ARCHIVO_SALIDA, "w", encoding="utf-8") as f:
+            f.write(mensaje + ("\n" if not mensaje.endswith("\n") else ""))
+            if aplicadas:
                 f.write("\nSecuencia de producciones aplicadas:\n")
-                for i, (nt, prod) in enumerate(applied, 1):
+                for i, (nt, prod) in enumerate(aplicadas, 1):
                     rhs = " ".join(prod)
                     f.write(f"{i}. {nt} → {rhs}\n")
     except Exception as e:
-        print(f"No se pudo escribir el archivo {OUTPUT_FILENAME}: {e}", file=sys.stderr)
+        print(f"Advertencia: no se pudo escribir el archivo {NOMBRE_ARCHIVO_SALIDA}: {e}", file=sys.stderr)
 
-def main():
-    source = read_source_from_args_or_stdin()
-    if source is None:
+def principal():
+    fuente = leer_fuente_desde_argumentos_o_entrada()
+    if fuente is None:
         print("No se proporcionó entrada.", file=sys.stderr)
         sys.exit(1)
 
     try:
-        tokens = tokenize(source)
-    except LexerError as e:
+        tokens = tokenizar(fuente)
+    except ErrorLexer as e:
         msg = str(e)
         if "Indentation" in msg or "indent" in msg.lower():
-            fake = Token(type="INDENT", lexeme="<INDENT_ERR>", line=0, col=0)
-            out = Emod.format_indentation_error(fake)
+            falso = Token(tipo="INDENT", lexema="<INDENT_ERR>", linea=0, col=0)
+            salida = Emod.formatear_error_indentacion(falso)
         else:
-            fake = Token(type="", lexeme=str(e), line=0, col=0)
-            out = Emod.format_token_error(fake, ["EOF"])
-        write_output(out)
-        print(out)
+            falso = Token(tipo="", lexema=str(e), linea=0, col=0)
+            salida = Emod.formatear_error_token(falso, ["EOF"])
+        escribir_salida(salida)
+        print(salida)
         return
 
     try:
-        table_pred, FIRST, FOLLOW, SELECT = Tmod.build_predictive_table(Gmod.grammar, Gmod.START_SYMBOL)
+        tabla_pred, FIRST, FOLLOW, SELECT = Tmod.construir_tabla_predictiva(Gmod.gramatica, Gmod.SIMBOLO_INICIAL)
     except Exception as e:
         msg = f"Error construyendo tabla predictiva LL(1): {e}"
         print(msg, file=sys.stderr)
         sys.exit(2)
 
-    norm_grammar = Gmod.normalize_grammar_for_ll1(Gmod.grammar)
+    gramatica_normalizada = Gmod.normalizar_gramatica_para_ll1(Gmod.gramatica)
 
     try:
-        res = Pmod.parse(tokens, table_pred, norm_grammar, Gmod.START_SYMBOL)
+        res = Pmod.analizar(tokens, tabla_pred, gramatica_normalizada, Gmod.SIMBOLO_INICIAL)
         if isinstance(res, tuple) and len(res) == 3:
-            ok, message, applied = res
+            ok, mensaje, aplicadas = res
         elif isinstance(res, tuple) and len(res) == 2:
-            ok, message = res
-            applied = []
+            ok, mensaje = res
+            aplicadas = []
         else:
             ok = False
-            message = "Error: parse devolvió un resultado inesperado."
-            applied = []
+            mensaje = "Error interno: analizar devolvió un resultado inesperado."
+            aplicadas = []
     except Exception as e:
         ok = False
-        message = f"Error {e}"
-        applied = []
+        mensaje = f"ANALIZADOR LANZÓ EXCEPCIÓN: {e}"
+        aplicadas = []
 
-    write_output(message, applied if ok else None)
-    print(message)
+    escribir_salida(mensaje, aplicadas if ok else None)
+    print(mensaje)
 
 if __name__ == "__main__":
-    main()
+    principal()

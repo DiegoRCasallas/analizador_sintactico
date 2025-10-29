@@ -1,137 +1,137 @@
 from copy import deepcopy
 
 EPS = 'ε'
-ENDMARK = '$'
+MARCA_FIN = '$'
 
-def symbols_from_grammar(grammar):
-    nonterminals = set(grammar.keys())
-    used = set()
-    for prods in grammar.values():
+def simbolos_de_gramatica(gramatica):
+    no_terminales = set(gramatica.keys())
+    usados = set()
+    for prods in gramatica.values():
         for prod in prods:
-            for sym in prod:
-                used.add(sym)
-    terminals = set(sym for sym in used if sym not in nonterminals and sym != EPS)
-    return nonterminals, terminals
+            for simb in prod:
+                usados.add(simb)
+    terminales = set(simb for simb in usados if simb not in no_terminales and simb != EPS)
+    return no_terminales, terminales
 
-def compute_first(grammar):
-    G = deepcopy(grammar)
-    nonterminals, terminals = symbols_from_grammar(G)
+def calcular_first(gramatica):
+    G = deepcopy(gramatica)
+    no_terminales, terminales = simbolos_de_gramatica(G)
 
-    FIRST = { sym: set() for sym in nonterminals.union(terminals) }
-    for t in terminals:
+    FIRST = { simb: set() for simb in no_terminales.union(terminales) }
+    for t in terminales:
         FIRST[t].add(t)
-    changed = True
-    while changed:
-        changed = False
-        for A in nonterminals:
+    cambiado = True
+    while cambiado:
+        cambiado = False
+        for A in no_terminales:
             for prod in G[A]:
                 if prod == [EPS]:
                     if EPS not in FIRST[A]:
                         FIRST[A].add(EPS)
-                        changed = True
+                        cambiado = True
                     continue
-                add_eps = True
+                agregar_eps = True
                 for X in prod:
-                    before = len(FIRST[A])
+                    antes = len(FIRST[A])
                     FIRST[A].update(x for x in FIRST.get(X, set()) if x != EPS)
                     if EPS in FIRST.get(X, set()):
-                        add_eps = True
+                        agregar_eps = True
                     else:
-                        add_eps = False
+                        agregar_eps = False
                         break
-                    if len(FIRST[A]) > before:
-                        changed = True
-                if add_eps:
+                    if len(FIRST[A]) > antes:
+                        cambiado = True
+                if agregar_eps:
                     if EPS not in FIRST[A]:
                         FIRST[A].add(EPS)
-                        changed = True
+                        cambiado = True
     return FIRST
 
-def first_of_sequence(seq, FIRST):
-    result = set()
-    if seq == []:
-        result.add(EPS)
-        return result
-    for X in seq:
+def first_de_secuencia(secuencia, FIRST):
+    resultado = set()
+    if secuencia == []:
+        resultado.add(EPS)
+        return resultado
+    for X in secuencia:
         fx = FIRST.get(X, set())
-        result.update(x for x in fx if x != EPS)
+        resultado.update(x for x in fx if x != EPS)
         if EPS in fx:
             continue
         else:
             break
     else:
-        result.add(EPS)
-    return result
+        resultado.add(EPS)
+    return resultado
 
-def compute_follow(grammar, FIRST, start_symbol):
-    G = deepcopy(grammar)
-    nonterminals, terminals = symbols_from_grammar(G)
-    FOLLOW = { A: set() for A in nonterminals }
-    FOLLOW[start_symbol].add(ENDMARK)
+def calcular_follow(gramatica, FIRST, simbolo_inicial):
+    G = deepcopy(gramatica)
+    no_terminales, terminales = simbolos_de_gramatica(G)
+    FOLLOW = { A: set() for A in no_terminales }
+    FOLLOW[simbolo_inicial].add(MARCA_FIN)
 
-    changed = True
-    while changed:
-        changed = False
-        for A in nonterminals:
+    cambiado = True
+    while cambiado:
+        cambiado = False
+        for A in no_terminales:
             for prod in G[A]:
                 for i, B in enumerate(prod):
-                    if B not in nonterminals:
+                    if B not in no_terminales:
                         continue
                     beta = prod[i+1:] if i+1 < len(prod) else []
-                    first_beta = first_of_sequence(beta, FIRST)
-                    before = len(FOLLOW[B])
+                    first_beta = first_de_secuencia(beta, FIRST)
+                    antes = len(FOLLOW[B])
                     FOLLOW[B].update(x for x in first_beta if x != EPS)
                     if EPS in first_beta or beta == []:
                         FOLLOW[B].update(FOLLOW[A])
-                    if len(FOLLOW[B]) > before:
-                        changed = True
+                    if len(FOLLOW[B]) > antes:
+                        cambiado = True
     return FOLLOW
 
-def compute_select(grammar, FIRST, FOLLOW):
-    G = deepcopy(grammar)
+def calcular_select(gramatica, FIRST, FOLLOW):
+    G = deepcopy(gramatica)
     select = {}
     for A, prods in G.items():
         for idx, prod in enumerate(prods):
             if prod == [EPS]:
                 select[(A, idx)] = set(FOLLOW[A])
             else:
-                first_alpha = first_of_sequence(prod, FIRST)
+                first_alpha = first_de_secuencia(prod, FIRST)
                 sel = set(x for x in first_alpha if x != EPS)
                 if EPS in first_alpha:
                     sel.update(FOLLOW[A])
                 select[(A, idx)] = sel
     return select
 
-def build_parse_table(grammar, select):
-    table = {}
-    for (A, idx), terminals in select.items():
-        for a in terminals:
-            key = (A, a)
-            if key in table:
-                raise ValueError(f"Conflicto en la tabla de análisis para {A} en el terminal {a}: ya existe {table[key]}, intentando {idx}")
-            table[key] = idx
-    return table
+def construir_tabla_analisis(gramatica, select):
+    tabla = {}
+    for (A, idx), terminales in select.items():
+        for a in terminales:
+            clave = (A, a)
+            if clave in tabla:
+                raise ValueError(f"Conflicto en tabla de análisis para {A} en terminal {a}: ya existe {tabla[clave]}, intentando {idx}")
+            tabla[clave] = idx
+    return tabla
 
-def compute_all_sets(grammar, start_symbol):
-    FIRST = compute_first(grammar)
-    FOLLOW = compute_follow(grammar, FIRST, start_symbol)
-    SELECT = compute_select(grammar, FIRST, FOLLOW)
-    PARSE_TABLE = build_parse_table(grammar, SELECT)
-    return FIRST, FOLLOW, SELECT, PARSE_TABLE
+def calcular_todos_conjuntos(gramatica, simbolo_inicial):
+    FIRST = calcular_first(gramatica)
+    FOLLOW = calcular_follow(gramatica, FIRST, simbolo_inicial)
+    SELECT = calcular_select(gramatica, FIRST, FOLLOW)
+    TABLA_ANALISIS = construir_tabla_analisis(gramatica, SELECT)
+    return FIRST, FOLLOW, SELECT, TABLA_ANALISIS
 
 if __name__ == "__main__":
     import grammar as Gmod
-    g = Gmod.normalize_grammar_for_ll1(Gmod.grammar)
-    FIRST, FOLLOW, SELECT, TABLE = compute_all_sets(g, Gmod.START_SYMBOL)
-    print("Primeros):")
+    g = Gmod.normalizar_gramatica_para_ll1(Gmod.gramatica)
+    FIRST, FOLLOW, SELECT, TABLA = calcular_todos_conjuntos(g, Gmod.SIMBOLO_INICIAL)
+    print("Primeros:")
     for k in sorted(FIRST):
         print(k, ":", FIRST[k])
     print("\nSiguientes:")
     for k in sorted(FOLLOW):
         print(k, ":", FOLLOW[k])
-    print("\nPredicción:")
+    print("\nEntradas:")
     for k in list(SELECT.keys())[:20]:
         print(k, "->", SELECT[k])
     print("\nEntradas de la tabla de análisis:")
-    for k in list(TABLE.keys())[:20]:
-        print(k, ":", TABLE[k])
+    for k in list(TABLA.keys())[:20]:
+        print(k, ":", TABLA[k])

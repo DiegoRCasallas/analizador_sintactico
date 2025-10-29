@@ -4,9 +4,9 @@ import table as Tmod
 from lexer import Token
 
 EPS = 'ε'
-ENDMARK = '$'
+MARCA_FIN = '$'
 
-READABLE = {
+LEGIBLE = {
     'COLON': ':',
     'COMMA': ',',
     'DOT': '.',
@@ -17,133 +17,133 @@ READABLE = {
     'LBRACE': '{',
     'RBRACE': '}',
     'ASSIGN': '=',
-    'NEWLINE': 'NEWLINE',
-    'INDENT': 'INDENT',
-    'DEDENT': 'DEDENT',
+    'NEWLINE': 'NUEVALINEA',
+    'INDENT': 'INDENTACION',
+    'DEDENT': 'DEDENTACION',
     'EOF': 'EOF',
-    'ID': 'identifier',
-    'INT': 'integer',
-    'FLOAT': 'float',
-    'STRING': 'string',
-    'BINOP': 'operator',
+    'ID': 'identificador',
+    'INT': 'entero',
+    'FLOAT': 'flotante',
+    'STRING': 'cadena',
+    'BINOP': 'operador',
 }
 
-def token_to_terminal(token):
-    ttype = token.type
-    lex = token.lexeme
-    if ttype == 'KEYWORD':
+def token_a_terminal(token):
+    tipo = token.tipo
+    lex = token.lexema
+    if tipo == 'KEYWORD':
         return f"KEYWORD_{lex}"
-    if ttype == 'OP' or ttype == 'CMP':
+    if tipo == 'OP' or tipo == 'CMP':
         return 'BINOP'
-    return ttype
+    return tipo
 
-def readable_of_terminal(term):
-    if term in READABLE:
-        return READABLE[term]
-    if term.startswith('KEYWORD_'):
-        return term.split('KEYWORD_', 1)[1]
-    return term
+def legible_de_terminal(terminal):
+    if terminal in LEGIBLE:
+        return LEGIBLE[terminal]
+    if terminal.startswith('KEYWORD_'):
+        return terminal.split('KEYWORD_', 1)[1]
+    return terminal
 
-def format_token_error(token, expected_list):
-    if expected_list == ['INDENTATION_ERROR']:
-        return f"<{token.line}, {token.col}>Error sintactico: falla de indentacion"
-    lex = token.lexeme.replace('"', '\\"')
-    expected_fmt = ', '.join(f'"{e}"' for e in expected_list)
-    return f'<{token.line}, {token.col}> Error sintactico: se encontro: "{lex}"; se esperaba: {expected_fmt}.'
+def formatear_error_token(token, lista_esperados):
+    if lista_esperados == ['INDENTATION_ERROR']:
+        return f"<{token.linea}, {token.col}>Error sintactico: falla de indentacion"
+    lex = token.lexema.replace('"', '\\"')
+    esperados_fmt = ', '.join(f'"{e}"' for e in lista_esperados)
+    return f'<{token.linea}, {token.col}> Error sintactico: se encontro: "{lex}"; se esperaba: {esperados_fmt}.'
 
-def gather_expected_for_nonterminal(nonterminal, table):
-    expected_terms = Tmod.expected_tokens_for_nonterminal(nonterminal, table)
-    readable = [readable_of_terminal(t) for t in expected_terms]
-    return readable if readable else [readable_of_terminal('EOF')]
+def recopilar_esperados_para_no_terminal(no_terminal, tabla):
+    terminales_esperados = Tmod.terminales_esperados_para_no_terminal(no_terminal, tabla)
+    legibles = [legible_de_terminal(t) for t in terminales_esperados]
+    return legibles if legibles else [legible_de_terminal('EOF')]
 
-def parse(tokens, table, grammar, start_symbol, debug=False):
+def analizar(tokens, tabla, gramatica, simbolo_inicial, depuracion=False):
     from collections import deque
 
-    stack = deque()
-    stack.append('EOF')
-    stack.append(start_symbol)
+    pila = deque()
+    pila.append('EOF')
+    pila.append(simbolo_inicial)
 
     cursor = 0
     n = len(tokens)
     if n == 0:
         return False, '<0, 0> Error sintactico: se encontro: ""; se esperaba: "EOF".'
 
-    if tokens[-1].type != 'EOF':
-        tokens = tokens + [Token('EOF', '<EOF>', tokens[-1].line, tokens[-1].col + 1)]
+    if tokens[-1].tipo != 'EOF':
+        tokens = tokens + [Token('EOF', '<EOF>', tokens[-1].linea, tokens[-1].col + 1)]
         n += 1
 
-    applied_productions = []
+    producciones_aplicadas = []
 
-    while stack:
-        top = stack.pop()
-        cur = tokens[cursor]
-        cur_term = token_to_terminal(cur)
+    while pila:
+        tope = pila.pop()
+        actual = tokens[cursor]
+        terminal_actual = token_a_terminal(actual)
 
-        if debug:
-            print(f"[DEBUG] stack_top={top}  cur=({cursor}){cur.type}:{cur.lexeme}  cur_term={cur_term}")
+        if depuracion:
+            print(f"[DEPURACION] pila_tope={tope}  actual=({cursor}){actual.tipo}:{actual.lexema}  terminal_actual={terminal_actual}")
 
-        if top == EPS:
+        if tope == EPS:
             continue
 
-        if top not in grammar:
-            if top == cur_term:
+        if tope not in gramatica:
+            if tope == terminal_actual:
                 cursor += 1
-                if top == 'EOF':
-                    return True, "El analisis sintactico ha finalizado exitosamente.", applied_productions
+                if tope == 'EOF':
+                    return True, "El analisis sintactico ha finalizado exitosamente.", producciones_aplicadas
                 continue
             else:
-                expected = [readable_of_terminal(top)]
-                msg = format_token_error(cur, expected)
-                return False, msg, []
+                esperados = [legible_de_terminal(tope)]
+                mensaje = formatear_error_token(actual, esperados)
+                return False, mensaje, []
         else:
-            key = (top, cur_term)
-            prod = table.get(key)
+            clave = (tope, terminal_actual)
+            prod = tabla.get(clave)
             if prod is None:
-                expected = Tmod.expected_tokens_for_nonterminal(top, table)
-                expected_readable = [readable_of_terminal(t) for t in expected] or [readable_of_terminal('EOF')]
-                msg = format_token_error(cur, expected_readable)
-                return False, msg, []
-            applied_productions.append((top, prod))
-            for sym in reversed(prod):
-                if sym != EPS:
-                    stack.append(sym)
+                esperados = Tmod.terminales_esperados_para_no_terminal(tope, tabla)
+                esperados_legibles = [legible_de_terminal(t) for t in esperados] or [legible_de_terminal('EOF')]
+                mensaje = formatear_error_token(actual, esperados_legibles)
+                return False, mensaje, []
+            producciones_aplicadas.append((tope, prod))
+            for simb in reversed(prod):
+                if simb != EPS:
+                    pila.append(simb)
 
         if cursor >= n:
-            last = tokens[-1]
-            return False, format_token_error(last, [readable_of_terminal('EOF')]), []
+            ultimo = tokens[-1]
+            return False, formatear_error_token(ultimo, [legible_de_terminal('EOF')]), []
 
-    if cursor < n and tokens[cursor].type == 'EOF':
-        return True, "El analisis sintactico ha finalizado exitosamente.", applied_productions
+    if cursor < n and tokens[cursor].tipo == 'EOF':
+        return True, "El analisis sintactico ha finalizado exitosamente.", producciones_aplicadas
     if cursor >= n:
-        return True, "El analisis sintactico ha finalizado exitosamente.", applied_productions
+        return True, "El analisis sintactico ha finalizado exitosamente.", producciones_aplicadas
 
-    cur = tokens[cursor]
-    return False, format_token_error(cur, [readable_of_terminal('EOF')]), []
+    actual = tokens[cursor]
+    return False, formatear_error_token(actual, [legible_de_terminal('EOF')]), []
 
 
 
 if __name__ == "__main__":
-    from lexer import tokenize, LexerError
+    from lexer import tokenizar, ErrorLexer
     import table as T
     import grammar as G
 
-    src = """def foo(x):
+    fuente = """def foo(x):
     if x > 0:
         return x + 1
     else:
         return 0
 """
     try:
-        toks = tokenize(src)
-    except LexerError as e:
-        print("LexerError:", e)
+        toks = tokenizar(fuente)
+    except ErrorLexer as e:
+        print("ErrorLexer:", e)
         raise
 
     try:
-        table_pred, FIRST, FOLLOW, SELECT = T.build_predictive_table(G.grammar, G.START_SYMBOL)
+        tabla_pred, FIRST, FOLLOW, SELECT = T.construir_tabla_predictiva(G.gramatica, G.SIMBOLO_INICIAL)
     except Exception as e:
-        print("Error", e)
+        print("Error al construir tabla predictiva:", e)
         raise
 
-    ok, message = parse(toks, table_pred, G.normalize_grammar_for_ll1(G.grammar), G.START_SYMBOL)
-    print(message)
+    ok, mensaje = analizar(toks, tabla_pred, G.normalizar_gramatica_para_ll1(G.gramatica), G.SIMBOLO_INICIAL)
+    print(mensaje)
